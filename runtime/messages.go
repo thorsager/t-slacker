@@ -31,6 +31,7 @@ func (c *AppRuntime) renderMessageEvent(msg *slack.MessageEvent) []byte {
 			uname = u.Name
 		}
 		parsedText := parseUsers(team, msg.Text)
+		parsedText += renderFiles(msg.Files)
 		return []byte(fmt.Sprintf("\n%.2d:%.2d [#666666]<[-][%s]%s[-][#666666]>[-] %s", t.Hour(), t.Minute(),
 			color, uname, parsedText))
 	}
@@ -48,7 +49,19 @@ func (c *AppRuntime) renderMessage(teamId string, msg slack.Message) []byte {
 		uname = u.Name
 	}
 	parsedText := parseUsers(team, msg.Text)
+	parsedText += renderFiles(msg.Files)
 	return []byte(fmt.Sprintf("\n%.2d:%.2d [#666666]<[-][%s]%s[-][#666666]>[-] %s", t.Hour(), t.Minute(), color, uname, parsedText))
+}
+
+func renderFiles(files []slack.File) (rendered string) {
+	rendered = ""
+	if files != nil && len(files) > 0 {
+		rendered += "\n[#888888]  Attachments:[-]"
+		for _, file := range files {
+			rendered += fmt.Sprintf("\n    - [#888888]%s[-]", file.URLPrivate)
+		}
+	}
+	return rendered
 }
 
 func parseUsers(team *connection.Connection, msg string) string {
