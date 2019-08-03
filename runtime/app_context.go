@@ -91,6 +91,9 @@ func (c *AppRuntime) AddPane(teamId, conversationId string, show bool) {
 					_, _ = p.WriteNoChange([]byte(fmt.Sprintf("\n[gray]Day changed to %s[-]", ct.Format("02 January 2006"))))
 					lt = ct
 				}
+				if c.Cfg.Debug {
+					c.PaneController.GetStatusPane().Logf("DEBUG", "history-fetch %s/#%s\n[#333333]%+v[-]", tc.Name, cname, m)
+				}
 				_, _ = p.WriteNoChange(c.renderMessage(t.User.TeamID, m))
 			}
 			now := time.Now()
@@ -130,6 +133,9 @@ func findChannel(l []slack.Channel, predicate func(channel slack.Channel) bool) 
 
 // This is a "delegate" method to handle RTMEvents
 func (c *AppRuntime) rtmEvent(source *connection.Connection, event *slack.RTMEvent) {
+	if c.Cfg.Debug {
+		c.PaneController.GetStatusPane().Logf(source.Name, "GOT EVENT: %s\n[#333333]%+v[-]", event.Type, event.Data)
+	}
 	switch event.Type {
 	case "message":
 		e := event.Data.(*slack.MessageEvent)
@@ -156,9 +162,7 @@ func (c *AppRuntime) rtmEvent(source *connection.Connection, event *slack.RTMEve
 			}
 		}
 	default:
-		if c.Cfg.Debug {
-			c.PaneController.GetStatusPane().Logf(source.Name, "GOT EVENT: %s, %+v", event.Type, event.Data)
-		}
+
 	}
 	c.queueUpdateDraw(c.PaneController.UpdateStatusBar)
 }
