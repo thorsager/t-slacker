@@ -58,7 +58,11 @@ func renderFiles(files []slack.File) (rendered string) {
 	if files != nil && len(files) > 0 {
 		rendered += "\n[#888888]  Attachments:[-]"
 		for _, file := range files {
-			rendered += fmt.Sprintf("\n    - [#888888]%s[-]", file.URLPrivate)
+			if file.Mimetype == "application/vnd.slack-docs" {
+				rendered += fmt.Sprintf("\n    - [#888888]%s[-]", file.Permalink)
+			} else {
+				rendered += fmt.Sprintf("\n    - [#888888]%s[-]", file.URLPrivate)
+			}
 		}
 	}
 	return rendered
