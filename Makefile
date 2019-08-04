@@ -27,6 +27,6 @@ run: app
 	./${OUT}
 
 clean:
-	-@rm ${OUT} ${OUT}-v*
+	-@rm ${OUT} ${OUT}-*
 
 .PHONY: run server static vet lint
