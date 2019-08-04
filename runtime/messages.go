@@ -18,11 +18,7 @@ var (
 
 func (c *AppRuntime) renderMessageEvent(msg *slack.MessageEvent) []byte {
 	switch msg.SubType {
-	case "message_replied":
-		return []byte("\nTODO: handle message-replies")
-	case "message_deleted":
-		return []byte("\n[#333333]a message was deleted.[-]")
-	default:
+	case "":
 		team := c.GetTeam(msg.Team)
 		t := asTime(msg.Timestamp)
 		uname := msg.User
@@ -37,6 +33,8 @@ func (c *AppRuntime) renderMessageEvent(msg *slack.MessageEvent) []byte {
 		parsedText += renderFiles(msg.Files)
 		return []byte(fmt.Sprintf("\n%.2d:%.2d [#666666]<[-][%s]%s[-][#666666]>[-] %s", t.Hour(), t.Minute(),
 			color, uname, parsedText))
+	default:
+		return []byte(fmt.Sprintf("\n[#333333]Event subType '%s' not yet handled (hidden=%t).[-]", msg.SubType, msg.Hidden))
 	}
 }
 
