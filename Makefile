@@ -26,6 +26,9 @@ static: vet lint
 run: app
 	./${OUT}
 
+debug: app
+	./${OUT} -debug
+
 clean:
 	-@rm ${OUT} ${OUT}-*
 

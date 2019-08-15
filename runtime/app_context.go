@@ -29,11 +29,12 @@ type AppRuntime struct {
 }
 
 // New Create new AppRuntime
-func New(appHome string, title string) (*AppRuntime, error) {
+func New(appHome string, title string, debug bool) (*AppRuntime, error) {
 	cfg, err := config.Load(path.Join(appHome, "config.json"))
 	if err != nil {
 		return nil, err
 	}
+	cfg.Debug = debug || cfg.Debug
 
 	app := tview.NewApplication()
 	root := tview.NewPages()
