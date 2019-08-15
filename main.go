@@ -27,7 +27,6 @@ func init() {
 }
 
 func main() {
-	log.Printf("deug=%t", debug)
 	ctx, err := runtime.New(appHome,
 		fmt.Sprintf(" %s %s - %s", constants.Name, version, constants.Url),
 		debug)
@@ -39,5 +38,4 @@ func main() {
 	if err != nil {
 		log.Fatalf("unable to start application runtime: %v", err)
 	}
-
 }
