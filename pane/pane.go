@@ -119,7 +119,9 @@ func (p *Pane) Changed() bool {
 func (p *Pane) Notify() bool {
 	return p.notify
 }
-
+func (p *Pane) GetName() string {
+	return p.name
+}
 func (p *Pane) UpdateStatus() {
 	if p.statusLine != nil {
 		p.status.SetText(p.statusLine(p))

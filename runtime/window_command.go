@@ -23,7 +23,14 @@ func (c *windowCommand) Execute(ctx *AppRuntime) {
 	case "PREV", "P":
 		ctx.PaneController.SetPrevActive()
 	case "LIST", "LS", "L":
-		ctx.PaneController.GetStatusPane().Log(constants.Name, ctx.PaneController.GetWindowList())
+		sp := ctx.PaneController.GetStatusPane()
+		for idx, p := range ctx.PaneController.GetPanes() {
+			if idx != 0 {
+				sp.RawLogf("\t%d: %s/%s ", idx+1, ctx.GetTeam(p.TeamId).Name, p.GetName())
+			} else {
+				sp.RawLogf("\t%d: %s ", idx+1, p.GetName())
+			}
+		}
 	default:
 		if i, err := strconv.Atoi(c.args[0]); err == nil {
 			if i > 0 && i <= ctx.PaneController.GetSize() {
