@@ -164,6 +164,10 @@ func (c *Controller) GetByChannelId(channelId string) *Pane {
 	return nil
 }
 
+func (c *Controller) GetPanes() []*Pane {
+	return c.panes
+}
+
 func (c *Controller) GetWindowList() string {
 	var ls []string
 	for i, p := range c.panes {
