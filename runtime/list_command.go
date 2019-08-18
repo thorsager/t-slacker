@@ -21,7 +21,7 @@ func (c *listCommand) Execute(ctx *AppRuntime) {
 	}
 	if c.source == ctx.PaneController.GetStatusPane() {
 		team := ctx.GetActiveTeam()
-		list, err := team.GetConversations(types...)
+		list, err := team.GetConversationsCaching(types...)
 		if err != nil {
 			ctx.PaneController.GetActive().Logf("ERROR", "unable to fetch channel-list: %v", err)
 		}

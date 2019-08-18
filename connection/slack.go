@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/nlopes/slack"
 	"github.com/thorsager/t-slacker/config"
+	"sort"
 	"strings"
 )
 
@@ -27,14 +28,15 @@ var (
 
 // Connection active connection to a slack-team
 type Connection struct {
-	Name       string
-	authTest   *slack.AuthTestResponse
-	User       *slack.User
-	api        *slack.Client
-	rtm        *slack.RTM
-	onEvent    func(source *Connection, event *slack.RTMEvent)
-	usersCache []slack.User
-	Config     *config.TeamConfig
+	Name              string
+	authTest          *slack.AuthTestResponse
+	User              *slack.User
+	api               *slack.Client
+	rtm               *slack.RTM
+	onEvent           func(source *Connection, event *slack.RTMEvent)
+	usersCache        []slack.User
+	Config            *config.TeamConfig
+	conversationCache map[string][]slack.Channel
 }
 
 // UserLookup lookup a team user by the userID
@@ -54,14 +56,21 @@ func (c *Connection) UserLookup(userID string) (*slack.User, error) {
 	return nil, fmt.Errorf("user %s not found", userID)
 }
 
-// UserLookupByName look up team user by user-name
-func (c *Connection) UserLookupByName(name string) (*slack.User, error) {
+func (c *Connection) refreshUserCache() error {
 	if len(c.usersCache) < 1 {
 		var err error
 		c.usersCache, err = c.GetUsers()
 		if err != nil {
-			return nil, err
+			return err
 		}
+	}
+	return nil
+}
+
+// UserLookupByName look up team user by user-name
+func (c *Connection) UserLookupByName(name string) (*slack.User, error) {
+	if err := c.refreshUserCache(); err != nil {
+		return nil, err
 	}
 	for _, e := range c.usersCache {
 		if strings.ToUpper(e.Name) == strings.ToUpper(name) {
@@ -74,6 +83,59 @@ func (c *Connection) UserLookupByName(name string) (*slack.User, error) {
 // GetUsers return all team users
 func (c *Connection) GetUsers() ([]slack.User, error) {
 	return c.api.GetUsers()
+}
+
+func (c *Connection) FindUserNamesStartingWith(prefix string) ([]string, error) {
+	if err := c.refreshUserCache(); err != nil {
+		return nil, err
+	}
+	var results []string
+	for _, e := range c.usersCache {
+		if strings.HasPrefix(strings.ToUpper(e.Name), strings.ToUpper(prefix)) {
+			results = append(results, e.Name)
+		}
+	}
+	sort.Strings(results)
+	return results, nil
+}
+
+func asKey(segments ...string) string {
+	sort.Strings(segments)
+	return strings.Join(segments, "-")
+}
+func (c *Connection) refreshConversationCache(types ...string) error {
+	key := asKey(types...)
+	if len(c.conversationCache[key]) < 1 {
+		conversations, err := c.GetConversations(types...)
+		if err != nil {
+			return err
+		}
+		c.conversationCache[key] = conversations
+	}
+	return nil
+}
+
+func (c *Connection) FindChannelNamesStartingWith(prefix string) ([]string, error) {
+	channels, err := c.GetConversationsCaching(TPrivateChannel, TPublicChannel)
+	if err != nil {
+		return nil, err
+	}
+
+	var results []string
+	for _, c := range channels {
+		if strings.HasPrefix(strings.ToUpper(c.Name), strings.ToUpper(prefix)) {
+			results = append(results, c.Name)
+		}
+	}
+	sort.Strings(results)
+	return results, nil
+}
+
+func (c *Connection) GetConversationsCaching(types ...string) ([]slack.Channel, error) {
+	if err := c.refreshConversationCache(types...); err != nil {
+		return nil, err
+	}
+	return c.conversationCache[asKey(types...)], nil
 }
 
 // GetAllChannels return all team channels
@@ -160,7 +222,8 @@ func (c *Connection) SendMessage(channelID, message string) error {
 
 // New Create new team connection
 func New(config *config.TeamConfig, oe func(source *Connection, event *slack.RTMEvent)) (*Connection, error) {
-	c := &Connection{Config: config, Name: config.Name, onEvent: oe, usersCache: make([]slack.User, 0)}
+	c := &Connection{Config: config, Name: config.Name, onEvent: oe, usersCache: make([]slack.User, 0),
+		conversationCache: make(map[string][]slack.Channel)}
 	c.api = slack.New(config.Token)
 
 	at, err := c.api.AuthTest()

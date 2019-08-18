@@ -24,7 +24,11 @@ func (c *privMsgCommand) Execute(ctx *AppRuntime) {
 		team = ctx.GetTeam(c.source.TeamId)
 	}
 
-	user, err := team.UserLookupByName(c.args[0])
+	name := c.args[0]
+	if name[0] == constants.UserIndicatorChar {
+		name = name[1:]
+	}
+	user, err := team.UserLookupByName(name)
 	if err != nil {
 		c.source.Logf(team.Name, "%s", err)
 		return

@@ -10,6 +10,7 @@ import (
 	"github.com/thorsager/t-slacker/constants"
 	"github.com/thorsager/t-slacker/pane"
 	"path"
+	"strings"
 	"sync"
 	"time"
 )
@@ -26,6 +27,13 @@ type AppRuntime struct {
 	tickSize       time.Duration
 	teams          []*connection.Connection
 	currentTeam    int
+	tab            tabControl
+}
+type tabControl struct {
+	Token        string
+	LastReturned string
+	Count        int
+	Indicator    uint8
 }
 
 // New Create new AppRuntime
@@ -45,16 +53,67 @@ func New(appHome string, title string, debug bool) (*AppRuntime, error) {
 		App:      app,
 		Root:     root,
 		tickSize: 100 * time.Millisecond,
+		tab:      tabControl{Token: "", Count: 0},
 	}
 
-	controller := pane.NewController(root, ctx.queueUpdateDraw, ctx.onInput, ctx.inputCapture)
+	controller := pane.NewController(root, ctx.queueUpdateDraw, ctx.onInput, ctx.inputCapture, ctx.tabCapture)
 	ctx.PaneController = controller
 	ctx.tickHandlers = append(ctx.tickHandlers, &StatusPaneTimeUpdater{then: time.Now()})
 	ctx.tickHandlers = append(ctx.tickHandlers, &DateChangeLogger{then: time.Now()})
-	ctx.PaneController.AddPane("(console)", title, "*console", "*console", true, ctx.buildConsoleStatusLine)
+	ctx.PaneController.AddPane("(console)", title, constants.ConsoleTeamChannelId, constants.ConsoleTeamChannelId, true, ctx.buildConsoleStatusLine)
 
 	app.SetRoot(root, true)
 	return ctx, nil
+}
+
+func (c *AppRuntime) tabCapture(p *pane.Pane, input string) string {
+	segments := strings.Split(input, " ")
+	ltok := segments[len(segments)-1]
+	if ltok == "" {
+		return input
+	}
+	niToken := ltok[1:]
+	if c.tab.Indicator != ltok[0] || niToken != c.tab.LastReturned {
+		c.tab.Indicator = ltok[0]
+		c.tab.Count = 0
+		c.tab.Token = niToken
+	}
+	if niToken == c.tab.LastReturned {
+		c.tab.Count = c.tab.Count + 1
+	}
+
+	var team *connection.Connection
+	var output string
+	if p.TeamId == constants.ConsoleTeamChannelId {
+		team = c.GetActiveTeam()
+	} else {
+		team = c.GetTeam(p.TeamId)
+	}
+	switch c.tab.Indicator {
+	case constants.UserIndicatorChar:
+		userNames, err := team.FindUserNamesStartingWith(c.tab.Token)
+		if err != nil {
+			output = input
+			break
+		}
+		idx := c.tab.Count % len(userNames)
+		newToken := userNames[idx]
+		output = strings.Join(append(segments[:1], string(c.tab.Indicator)+newToken), " ")
+		c.tab.LastReturned = newToken //store for repeat detection
+	case constants.ChannelIndicatorChar:
+		channelNames, err := team.FindChannelNamesStartingWith(c.tab.Token)
+		if err != nil {
+			output = input
+			break
+		}
+		idx := c.tab.Count % len(channelNames)
+		newToken := channelNames[idx]
+		output = strings.Join(append(segments[:1], string(c.tab.Indicator)+newToken), " ")
+		c.tab.LastReturned = newToken //store for repeat detection
+	default:
+		output = input
+	}
+	return output
 }
 
 func (c *AppRuntime) AddPane(teamId, conversationId string, show bool) {
