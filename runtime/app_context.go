@@ -294,9 +294,11 @@ func (c *AppRuntime) onInput(p *pane.Pane, input string) {
 		}
 	} else {
 		team := c.GetTeam(p.TeamId)
-		err := team.SendMessage(p.ChannelId, input)
-		if err != nil {
-			p.Logf("ERROR", "unable to send message at this time: %v", err)
+		if team != nil { // should only be nil on console-pane
+			err := team.SendMessage(p.ChannelId, input)
+			if err != nil {
+				p.Logf("ERROR", "unable to send message at this time: %v", err)
+			}
 		}
 	}
 }
