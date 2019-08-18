@@ -14,35 +14,36 @@ type privMsgCommand struct {
 
 func (c *privMsgCommand) Execute(ctx *AppRuntime) {
 	if len(c.args) != 1 {
-		ctx.PaneController.GetStatusPane().Log(constants.Name, "USAGE: /privmsg <user>")
+		c.source.Log(constants.Name, "USAGE: /privmsg <user>")
 		return
 	}
+	var team *connection.Connection
 	if c.source == ctx.PaneController.GetStatusPane() {
-		team := ctx.GetActiveTeam()
-		user, err := team.UserLookupByName(c.args[0])
-		if err != nil {
-			ctx.PaneController.GetActive().Logf("ERROR", "%s", err)
-			return
-		}
+		team = ctx.GetActiveTeam()
+	} else {
+		team = ctx.GetTeam(c.source.TeamId)
+	}
 
-		cl, err := team.GetConversations(connection.TIm)
-		if err != nil {
-			ctx.PaneController.GetActive().Log("ERROR", "unable to list privmsgs")
-			return
-		}
-		if ch, found := findChannel(cl, byUserId(user.ID)); found {
-			existing := ctx.PaneController.GetByChannelId(ch.ID)
-			if existing == nil {
-				ctx.AddPane(team.User.TeamID, ch.ID, true)
-			} else {
-				ctx.PaneController.SetActive(existing)
-			}
+	user, err := team.UserLookupByName(c.args[0])
+	if err != nil {
+		c.source.Logf(team.Name, "%s", err)
+		return
+	}
 
+	cl, err := team.GetConversations(connection.TIm)
+	if err != nil {
+		c.source.Log(team.Name, "unable to list privmsgs")
+		return
+	}
+	if ch, found := findChannel(cl, byUserId(user.ID)); found {
+		existing := ctx.PaneController.GetByChannelId(ch.ID)
+		if existing == nil {
+			ctx.AddPane(team.User.TeamID, ch.ID, true)
 		} else {
-			ctx.PaneController.GetActive().Log("ERROR", "TODO: Create new conversation.")
+			ctx.PaneController.SetActive(existing)
 		}
 	} else {
-		ctx.PaneController.GetActive().Log(constants.Name, "privmsg command only supported on console pane")
+		c.source.Log(constants.Name, "TODO: Create new conversation.")
 	}
 }
 

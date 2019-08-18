@@ -13,28 +13,33 @@ type joinCommand struct {
 
 func (c *joinCommand) Execute(ctx *AppRuntime) {
 	if len(c.args) != 1 {
-		ctx.PaneController.GetStatusPane().Log(constants.Name, "USAGE: /JOIN <channel>")
+		c.source.Log(constants.Name, "USAGE: /JOIN <channel>")
 		return
 	}
+	var team *connection.Connection
 	if c.source == ctx.PaneController.GetStatusPane() {
-		team := ctx.GetActiveTeam()
-		cl, err := team.GetConversations(connection.TAll...)
-		if err != nil {
-			ctx.PaneController.GetActive().Log("ERROR", "unable to list conversations")
-			return
-		}
-		ch, err := channelByName(c.args[0], cl)
-		if err != nil {
-			ctx.PaneController.GetActive().Logf("ERROR", "%s", err)
-			return
-		}
-		existing := ctx.PaneController.GetByChannelId(ch.ID)
-		if existing == nil {
-			ctx.AddPane(team.User.TeamID, ch.ID, true)
-		} else {
-			ctx.PaneController.SetActive(existing)
-		}
+		team = ctx.GetActiveTeam()
 	} else {
-		ctx.PaneController.GetActive().Log(constants.Name, "join command only supported on console pane")
+		team = ctx.GetTeam(c.source.TeamId)
+	}
+	if team == nil {
+		c.source.Log(constants.Name, "unable to determine team")
+		return
+	}
+	cl, err := team.GetConversations(connection.TAll...)
+	if err != nil {
+		c.source.Log(team.Name, "unable to list conversations")
+		return
+	}
+	ch, err := channelByName(c.args[0], cl)
+	if err != nil {
+		c.source.Logf(team.Name, "%s", err)
+		return
+	}
+	existing := ctx.PaneController.GetByChannelId(ch.ID)
+	if existing == nil {
+		ctx.AddPane(team.User.TeamID, ch.ID, true)
+	} else {
+		ctx.PaneController.SetActive(existing)
 	}
 }
