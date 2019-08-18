@@ -67,19 +67,19 @@ func (c *AppRuntime) AddPane(teamId, conversationId string, show bool) {
 	if err != nil {
 		c.PaneController.GetStatusPane().Logf("ERROR", "unable to locate conversation %s on %s: %v", conversationId, teamId, err)
 	}
-	cname := chnl.Name
+	cname := constants.ChannelIndicator + chnl.Name
 	topic := chnl.Topic.Value
 	if chnl.IsIM {
 		usr, err := t.UserLookup(chnl.User)
 		if err != nil {
-			cname = chnl.ID
-			topic = fmt.Sprintf("Private message with \"<@%s>\"", chnl.ID)
+			cname = constants.UserIndicator + chnl.ID
+			topic = fmt.Sprintf("Private message with \"<%s>\"", cname)
 		} else {
-			cname = usr.Name
-			topic = fmt.Sprintf("Private message with \"%s <@%s>\"", usr.RealName, usr.Name)
+			cname = constants.UserIndicator + usr.Name
+			topic = fmt.Sprintf("Private message with \"%s <%s>\"", usr.RealName, cname)
 		}
 	}
-	p := c.PaneController.AddPane("#"+cname, topic, teamId, chnl.ID, show, c.buildStatusLine)
+	p := c.PaneController.AddPane(cname, topic, teamId, chnl.ID, show, c.buildStatusLine)
 	if tc.History.Fetch {
 		messages, err := t.GetMessages(chnl.ID, tc.History.Size)
 		if err != nil {

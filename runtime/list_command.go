@@ -46,14 +46,16 @@ func format(c slack.Channel, team *connection.Connection) string {
 }
 
 func formatChannel(c slack.Channel) string {
-	return fmt.Sprintf("#%s %d [%s %d:%d] %s",
+	return fmt.Sprintf("%s%s %d [%s %d:%d] %s",
+		constants.ChannelIndicator,
 		c.Name, c.NumMembers,
 		channelMod(c), c.UnreadCount, c.UnreadCountDisplay,
 		c.Topic.Value)
 }
 
 func formatGroup(i slack.Channel, team *connection.Connection) string {
-	return fmt.Sprintf("#%s %d [%s %d:%d] %s",
+	return fmt.Sprintf("%s%s %d [%s %d:%d] %s",
+		constants.GroupIndicator,
 		i.Name, i.NumMembers,
 		channelMod(i), i.UnreadCount, i.UnreadCountDisplay,
 		i.Topic.Value)
