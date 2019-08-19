@@ -31,7 +31,11 @@ func (c *joinCommand) Execute(ctx *AppRuntime) {
 		c.source.Log(team.Name, "unable to list conversations")
 		return
 	}
-	ch, err := channelByName(c.args[0], cl)
+	name := c.args[0]
+	if name[0] == constants.ChannelIndicatorChar {
+		name = name[1:]
+	}
+	ch, err := channelByName(name, cl)
 	if err != nil {
 		c.source.Logf(team.Name, "%s", err)
 		return

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
-	"strings"
 	"time"
 )
 
@@ -21,6 +20,7 @@ type Pane struct {
 	notify       bool
 	onInput      func(pane *Pane, input string)
 	inputCapture func(pane *Pane, event *tcell.EventKey) *tcell.EventKey
+	tabCapture   func(pane *Pane, event *tcell.EventKey) string
 	statusLine   func(pane *Pane) string
 
 	TeamId    string
@@ -34,7 +34,8 @@ func (p *Pane) appendContent(s string) {
 func newPane(ctrl *Controller, name, title string,
 	sl func(p *Pane) string,
 	oi func(p *Pane, i string),
-	ic func(p *Pane, key *tcell.EventKey) *tcell.EventKey) *Pane {
+	ic func(p *Pane, key *tcell.EventKey) *tcell.EventKey,
+	tc func(pane *Pane, input string) string) *Pane {
 	cp := &Pane{controller: ctrl, name: name, onInput: oi, inputCapture: ic, statusLine: sl}
 
 	cp.content = tview.NewTextView().
@@ -73,16 +74,18 @@ func newPane(ctrl *Controller, name, title string,
 			cp.content.ScrollTo(nor, 0)
 			return nil
 		case tcell.KeyTAB:
-			line := cp.input.GetText()
-			segments := strings.Split(line, " ")
-			ltok := segments[len(segments)-1]
-			if ltok != "" {
-				if ltok[0] == '@' {
-					cp.Logf("DEBUG", "doing user completion from %s", ltok)
-				} else if ltok[0] == '#' {
-					cp.Logf("DEBUG", "doing channel completion from %s", ltok)
-				}
-			}
+			cp.input.SetText(tc(cp, cp.input.GetText()))
+			//line := cp.input.GetText()
+			//segments := strings.Split(line, " ")
+			//ltok := segments[len(segments)-1]
+			//if ltok != "" {
+			//	if ltok[0] == constants.UserIndicatorChar {
+			//		cp.Logf("DEBUG", "doing user completion from %s", ltok)
+			//	} else if ltok[0] == constants.ChannelIndicatorChar {
+			//		cp.Logf("DEBUG", "doing channel completion from %s", ltok)
+			//	}
+			//	cp.input.SetText(line+"<tab>")
+			//}
 			return nil
 		default:
 			return cp.inputCapture(cp, event)

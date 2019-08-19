@@ -17,14 +17,18 @@ type Controller struct {
 	statusUpdate    func()
 	onInput         func(pane *Pane, input string)
 	inputCapture    func(pane *Pane, event *tcell.EventKey) *tcell.EventKey
+	tabCapture      func(pane *Pane, input string) string
 }
 
-func NewController(root *tview.Pages, qudFunc func(func()), oip func(p *Pane, i string), ic func(p *Pane, e *tcell.EventKey) *tcell.EventKey) *Controller {
-	return &Controller{root: root, queueUpdateDraw: qudFunc, onInput: oip, inputCapture: ic}
+func NewController(root *tview.Pages, qudFunc func(func()), oip func(p *Pane, i string),
+	ic func(p *Pane, e *tcell.EventKey) *tcell.EventKey,
+	tc func(p *Pane, input string) string,
+) *Controller {
+	return &Controller{root: root, queueUpdateDraw: qudFunc, onInput: oip, inputCapture: ic, tabCapture: tc}
 }
 
 func (c *Controller) AddPane(name, title, teamId, channelId string, show bool, statusLine func(p *Pane) string) *Pane {
-	pane := newPane(c, name, title, statusLine, c.onInput, c.inputCapture)
+	pane := newPane(c, name, title, statusLine, c.onInput, c.inputCapture, c.tabCapture)
 	pane.TeamId = teamId
 	pane.ChannelId = channelId
 	c.Lock()
