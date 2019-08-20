@@ -242,6 +242,11 @@ func New(config *config.TeamConfig, oe func(source *Connection, event *slack.RTM
 		return nil, fmt.Errorf("unable to seed users cache: %s", err)
 	}
 
+	err = c.api.SetUserAsActive()
+	if err != nil {
+		return nil, fmt.Errorf("unable to set current user active: %s", err)
+	}
+
 	c.rtm = c.api.NewRTM()
 	go c.rtm.ManageConnection()
 	go c.delegateEvents()
