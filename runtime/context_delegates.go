@@ -38,7 +38,7 @@ func (c *AppRuntime) buildStatusLine(pane *pane.Pane) string {
 		teamName = at.Name
 		userName = at.User.Name
 		modeString = userModeString(at.User)
-		ch, err := at.GetConversationInfo(pane.ChannelId)
+		ch, err := at.GetConversationInfo(pane.Channel.ID)
 		if err == nil {
 			chanName = ch.Name
 			chanMod = channelMod(*ch)

@@ -59,7 +59,7 @@ func New(appHome string, title string, debug bool) (*AppRuntime, error) {
 	ctx.PaneController = controller
 	ctx.tickHandlers = append(ctx.tickHandlers, &StatusPaneTimeUpdater{then: time.Now()})
 	ctx.tickHandlers = append(ctx.tickHandlers, &DateChangeLogger{then: time.Now()})
-	ctx.PaneController.AddPane("(console)", title, constants.ConsoleTeamChannelId, constants.ConsoleTeamChannelId, true, ctx.buildConsoleStatusLine)
+	ctx.PaneController.AddPane("(console)", title, constants.ConsoleTeamChannelId, nil, true, ctx.buildConsoleStatusLine)
 
 	app.SetRoot(root, true)
 	return ctx, nil
@@ -87,7 +87,7 @@ func (c *AppRuntime) AddPane(teamId, conversationId string, show bool) {
 			topic = fmt.Sprintf("Private message with \"%s <%s>\"", usr.RealName, cname)
 		}
 	}
-	p := c.PaneController.AddPane(cname, topic, teamId, chnl.ID, show, c.buildStatusLine)
+	p := c.PaneController.AddPane(cname, topic, teamId, chnl, show, c.buildStatusLine)
 	if tc.History.Fetch {
 		messages, err := t.GetMessages(chnl.ID, tc.History.Size)
 		if err != nil {
@@ -119,7 +119,7 @@ func (c *AppRuntime) AddPane(teamId, conversationId string, show bool) {
 
 func (c *AppRuntime) RemovePane(p *pane.Pane) {
 	c.PaneController.RemovePane(p)
-	c.PaneController.GetStatusPane().Logf("DEBUG", "'%s' was removed", p.ChannelId)
+	c.PaneController.GetStatusPane().Logf("DEBUG", "'%s' was removed", p.Channel.ID)
 }
 
 func channelByName(name string, l []slack.Channel) (slack.Channel, error) {
@@ -168,12 +168,31 @@ func (c *AppRuntime) rtmEvent(source *connection.Connection, event *slack.RTMEve
 			_, _ = p.Write(c.renderMessageEvent(e))
 			if c.PaneController.IsActive(p) {
 				c.queueUpdateDraw(func() {})
+				team := c.GetTeam(p.TeamId)
+				err := markConversation(team, p.Channel, e.Timestamp)
+				if err != nil {
+					c.PaneController.GetStatusPane().Logf("ERROR", "unable to set read mark for %s/%s ts:%s (%s)", p.TeamId, p.Channel.ID, e.Timestamp, err)
+				} else {
+					if c.Cfg.Debug {
+						c.Debugf("set read marker for %s/%s ts:%s", p.TeamId, p.Channel.ID, e.Timestamp)
+					}
+				}
 			}
 		}
 	default:
 
 	}
 	c.queueUpdateDraw(c.PaneController.UpdateStatusBar)
+}
+
+func markConversation(con *connection.Connection, cha slack.Channel, ts string) error {
+	if cha.IsIM {
+		return con.MarkIMChannel(cha.ID, ts)
+	} else if cha.IsGroup {
+		return con.SetGroupReadMark(cha.ID, ts)
+	} else {
+		return con.SetChannelReadMark(cha.ID, ts)
+	}
 }
 
 // Connect to a team, and store connection i list of connected teams
@@ -303,7 +322,7 @@ func (c *AppRuntime) onInput(p *pane.Pane, input string) {
 	} else {
 		team := c.GetTeam(p.TeamId)
 		if team != nil { // should only be nil on console-pane
-			err := team.SendMessage(p.ChannelId, input)
+			err := team.SendMessage(p.Channel.ID, input)
 			if err != nil {
 				p.Logf("ERROR", "unable to send message at this time: %v", err)
 			}
