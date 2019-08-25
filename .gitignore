@@ -16,3 +16,6 @@
 
 # Binaries
 t-slacker*
+
+# vi(m) backup-files
+*~
