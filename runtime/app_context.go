@@ -140,6 +140,15 @@ func findChannel(l []slack.Channel, predicate func(channel slack.Channel) bool) 
 	return *&slack.Channel{}, false
 }
 
+func (c *AppRuntime) findTeamByUserID(userId string) *connection.Connection {
+	for _, t := range c.teams {
+		if t.User.ID == userId {
+			return t
+		}
+	}
+	return nil
+}
+
 // This is a "delegate" method to handle RTMEvents
 func (c *AppRuntime) rtmEvent(source *connection.Connection, event *slack.RTMEvent) {
 	if c.Cfg.Debug {
@@ -166,6 +175,11 @@ func (c *AppRuntime) rtmEvent(source *connection.Connection, event *slack.RTMEve
 				return
 			}
 			_, _ = p.Write(c.renderMessageEvent(e))
+			if c.Cfg.Notify {
+				if found := c.findTeamByUserID(e.User); found == nil {
+					fmt.Print("\a")
+				}
+			}
 			if c.PaneController.IsActive(p) {
 				c.queueUpdateDraw(func() {})
 				team := c.GetTeam(p.TeamId)
@@ -180,7 +194,7 @@ func (c *AppRuntime) rtmEvent(source *connection.Connection, event *slack.RTMEve
 			}
 		}
 	default:
-
+		fmt.Print("\a")
 	}
 	c.queueUpdateDraw(c.PaneController.UpdateStatusBar)
 }
