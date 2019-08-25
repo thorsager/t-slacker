@@ -194,7 +194,6 @@ func (c *AppRuntime) rtmEvent(source *connection.Connection, event *slack.RTMEve
 			}
 		}
 	default:
-		fmt.Print("\a")
 	}
 	c.queueUpdateDraw(c.PaneController.UpdateStatusBar)
 }
