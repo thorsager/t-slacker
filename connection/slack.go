@@ -148,6 +148,18 @@ func (c *Connection) GetConversationInfo(id string) (*slack.Channel, error) {
 	return c.api.GetConversationInfo(id, true)
 }
 
+func (c *Connection) SetChannelReadMark(channelID string, ts string) error {
+	return c.api.SetChannelReadMark(channelID, ts)
+}
+
+func (c *Connection) SetGroupReadMark(groupID string, ts string) error {
+	return c.api.SetGroupReadMark(groupID, ts)
+}
+
+func (c *Connection) MarkIMChannel(channelID string, ts string) error {
+	return c.api.MarkIMChannel(channelID, ts)
+}
+
 // GetConversations  get conversations
 func (c *Connection) GetConversations(types ...string) ([]slack.Channel, error) {
 	conversations, nextCursor, err := c.api.GetConversations(

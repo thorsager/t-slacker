@@ -3,6 +3,7 @@ package pane
 import (
 	"fmt"
 	"github.com/gdamore/tcell"
+	"github.com/nlopes/slack"
 	"github.com/rivo/tview"
 	"strings"
 	"sync"
@@ -20,17 +21,21 @@ type Controller struct {
 	tabCapture      func(pane *Pane, input string) string
 }
 
-func NewController(root *tview.Pages, qudFunc func(func()), oip func(p *Pane, i string),
+func NewController(root *tview.Pages,
+	qudFunc func(func()),
+	oip func(p *Pane, i string),
 	ic func(p *Pane, e *tcell.EventKey) *tcell.EventKey,
 	tc func(p *Pane, input string) string,
 ) *Controller {
 	return &Controller{root: root, queueUpdateDraw: qudFunc, onInput: oip, inputCapture: ic, tabCapture: tc}
 }
 
-func (c *Controller) AddPane(name, title, teamId, channelId string, show bool, statusLine func(p *Pane) string) *Pane {
+func (c *Controller) AddPane(name, title, teamId string, channel *slack.Channel, show bool, statusLine func(p *Pane) string) *Pane {
 	pane := newPane(c, name, title, statusLine, c.onInput, c.inputCapture, c.tabCapture)
 	pane.TeamId = teamId
-	pane.ChannelId = channelId
+	if channel != nil {
+		pane.Channel = *channel
+	}
 	c.Lock()
 	c.panes = append(c.panes, pane)
 	if show {
@@ -64,8 +69,6 @@ func (c *Controller) RemovePane(pane *Pane) {
 
 	if i, ok := c.getIndex(pane); ok {
 		c.panes = append(c.panes[:i], c.panes[i+1:]...)
-		//c.panes[len(c.panes)-1] = nil // or the zero value of T
-		//c.panes = c.panes[:len(c.panes)-1]
 	}
 
 	c.Unlock()
@@ -161,7 +164,7 @@ func (c *Controller) GetByTeamId(teamId string) (ret []*Pane) {
 
 func (c *Controller) GetByChannelId(channelId string) *Pane {
 	for _, e := range c.panes {
-		if e.ChannelId == channelId {
+		if e.Channel.ID == channelId {
 			return e
 		}
 	}

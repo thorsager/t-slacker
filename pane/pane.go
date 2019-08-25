@@ -3,6 +3,7 @@ package pane
 import (
 	"fmt"
 	"github.com/gdamore/tcell"
+	"github.com/nlopes/slack"
 	"github.com/rivo/tview"
 	"time"
 )
@@ -23,8 +24,8 @@ type Pane struct {
 	tabCapture   func(pane *Pane, event *tcell.EventKey) string
 	statusLine   func(pane *Pane) string
 
-	TeamId    string
-	ChannelId string
+	TeamId  string
+	Channel slack.Channel
 }
 
 func (p *Pane) appendContent(s string) {
@@ -75,17 +76,6 @@ func newPane(ctrl *Controller, name, title string,
 			return nil
 		case tcell.KeyTAB:
 			cp.input.SetText(tc(cp, cp.input.GetText()))
-			//line := cp.input.GetText()
-			//segments := strings.Split(line, " ")
-			//ltok := segments[len(segments)-1]
-			//if ltok != "" {
-			//	if ltok[0] == constants.UserIndicatorChar {
-			//		cp.Logf("DEBUG", "doing user completion from %s", ltok)
-			//	} else if ltok[0] == constants.ChannelIndicatorChar {
-			//		cp.Logf("DEBUG", "doing channel completion from %s", ltok)
-			//	}
-			//	cp.input.SetText(line+"<tab>")
-			//}
 			return nil
 		default:
 			return cp.inputCapture(cp, event)
