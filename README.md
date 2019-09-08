@@ -24,6 +24,7 @@ The content should look something like this:
 ```json
 {
   "debug": false,
+  "notify": false,
   "teams": [
     { "name": "my-team",
       "auto_connect": true,
