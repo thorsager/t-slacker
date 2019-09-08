@@ -60,7 +60,7 @@ func (c *AppRuntime) tabCapture(p *pane.Pane, input string) string {
 func join(segments []string, newToken string) string {
 	var res string
 	if len(segments) > 1 {
-		res = strings.Join(segments[:1], " ")
+		res = strings.Join(segments[:len(segments)-1], " ")
 		res += " "
 	}
 	return res + newToken
