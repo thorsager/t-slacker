@@ -8,9 +8,14 @@ import (
 
 // Config Main application Configuration
 type Config struct {
-	Debug  bool         `json:"debug"`
-	Notify bool         `json:"notify"`
-	Teams  []TeamConfig `json:"teams"`
+	Debug    bool           `json:"debug"`
+	Terminal TerminalConfig `json:"terminal"`
+	Teams    []TeamConfig   `json:"teams"`
+}
+
+type TerminalConfig struct {
+	Notify bool `json:"notify"`
+	Title  bool `json:"title"`
 }
 
 // TeamConfig Configuration of a slack team

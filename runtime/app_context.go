@@ -175,9 +175,12 @@ func (c *AppRuntime) rtmEvent(source *connection.Connection, event *slack.RTMEve
 				return
 			}
 			_, _ = p.Write(c.renderMessageEvent(e))
-			if c.Cfg.Notify {
+			if c.Cfg.Terminal.Notify {
 				if found := c.findTeamByUserID(e.User); found == nil {
 					fmt.Print("\a")
+					if c.Cfg.Terminal.Title {
+						fmt.Printf("\033]2;Messge on %s\a", p.GetName())
+					}
 				}
 			}
 			if c.PaneController.IsActive(p) {
