@@ -2,7 +2,7 @@ package runtime
 
 import (
 	"fmt"
-	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/v2"
 	"github.com/nlopes/slack"
 	"github.com/rivo/tview"
 	"github.com/thorsager/t-slacker/config"
